@@ -150,6 +150,10 @@ function App() {
           });
           await refresh(plan.id);
         }
+        if (modal.type === "restore") {
+          await api(`/technicians/${modal.id}/restore`, { reason });
+          await refresh();
+        }
         if (modal.type === "cancel") {
           await api(`/technicians/${modal.id}/cancel`, { reason });
           await refresh();
@@ -1003,12 +1007,14 @@ function App() {
                     </div>
                   </dl>
                   <Button
-                    variant="destructive"
+                    variant={t.active ? "destructive" : "default"}
                     className="w-full"
-                    disabled={busy || !t.active}
-                    onClick={() => open({ type: "cancel", id: t.id })}
+                    disabled={busy}
+                    onClick={() =>
+                      open({ type: t.active ? "cancel" : "restore", id: t.id })
+                    }
                   >
-                    Report cancellation
+                    {t.active ? "Report cancellation" : "Mark available again"}
                   </Button>
                 </section>
               ))}
@@ -1164,30 +1170,34 @@ function App() {
           if (!value && !busy) setModal(null);
         }}
         title={
-          modal?.type === "start"
-            ? "Start service?"
-            : modal?.type === "approve"
-              ? "Confirm this schedule?"
-              : modal?.type === "cancel"
-                ? "Report technician cancellation"
-                : modal?.type === "complete"
-                  ? "Mark service completed"
-                  : modal?.type === "edit"
-                    ? "Review assignment"
-                    : modal?.type === "clarify"
-                      ? "Clarify service request"
-                      : "Add a service request"
+          modal?.type === "restore"
+            ? "Restore technician availability?"
+            : modal?.type === "start"
+              ? "Start service?"
+              : modal?.type === "approve"
+                ? "Confirm this schedule?"
+                : modal?.type === "cancel"
+                  ? "Report technician cancellation"
+                  : modal?.type === "complete"
+                    ? "Mark service completed"
+                    : modal?.type === "edit"
+                      ? "Review assignment"
+                      : modal?.type === "clarify"
+                        ? "Clarify service request"
+                        : "Add a service request"
         }
         description={
-          modal?.type === "approve"
-            ? "You are making the final dispatch decision. Review unassigned and risky requests before approving."
-            : modal?.type === "cancel"
-              ? "Started work stays with its current technician and time slot so it can finish. Future pending work needs a revised plan."
-              : modal?.type === "edit"
-                ? "Changes are validated and logged. They remain a draft until approval."
-                : modal?.type === "complete"
-                  ? "Completed work is locked and cannot move during replanning."
-                  : "Provide the information your team needs to schedule this job."
+          modal?.type === "restore"
+            ? "The technician can be considered in a fresh proposal. Existing schedules stay unchanged until you replan and approve."
+            : modal?.type === "approve"
+              ? "You are making the final dispatch decision. Review unassigned and risky requests before approving."
+              : modal?.type === "cancel"
+                ? "Started work stays with its current technician and time slot so it can finish. Future pending work needs a revised plan."
+                : modal?.type === "edit"
+                  ? "Changes are validated and logged. They remain a draft until approval."
+                  : modal?.type === "complete"
+                    ? "Completed work is locked and cannot move during replanning."
+                    : "Provide the information your team needs to schedule this job."
         }
       >
         <form onSubmit={submitModal} className="modal-form">
@@ -1211,7 +1221,7 @@ function App() {
               ))}
             </div>
           )}
-          {modal?.type === "cancel" && (
+          {["cancel", "restore"].includes(modal?.type) && (
             <div className="text-sm mb-4 font-medium">
               {tech(modal.id).name} · {tech(modal.id).region}
             </div>
@@ -1432,13 +1442,15 @@ function App() {
             ) && (
               <Button disabled={busy} type="submit">
                 {busy && <LoaderCircle size={15} className="animate-spin" />}
-                {modal?.type === "approve"
-                  ? "Approve & confirm"
-                  : modal?.type === "cancel"
-                    ? "Confirm cancellation"
-                    : modal?.type === "complete"
-                      ? "Mark completed"
-                      : "Save change"}
+                {modal?.type === "restore"
+                  ? "Confirm availability"
+                  : modal?.type === "approve"
+                    ? "Approve & confirm"
+                    : modal?.type === "cancel"
+                      ? "Confirm cancellation"
+                      : modal?.type === "complete"
+                        ? "Mark completed"
+                        : "Save change"}
               </Button>
             )}
           </div>

@@ -287,3 +287,45 @@ test("deleting a request requires confirmation and removes its row", async ({
   ).toHaveCount(0);
   expect(deletions).toBe(1);
 });
+
+test("a cancelled technician can be restored only after confirmation with a reason", async ({
+  page,
+}) => {
+  const state = {
+    ...seedState(),
+    versions: [],
+    audit: [],
+    notifications: [],
+    provider: "MockProvider",
+  };
+  state.technicians[0].active = false;
+  let restores = 0;
+  await page.route("**/api/**", async (route) => {
+    if (new URL(route.request().url()).pathname.endsWith("/restore")) {
+      restores++;
+      expect(route.request().postDataJSON().reason).toBe(
+        "Returned to service.",
+      );
+      state.technicians[0].active = true;
+      return route.fulfill({
+        json: { status: "available", requiresReplan: true },
+      });
+    }
+    return route.fulfill({ json: state });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Technicians", exact: true }).click();
+  await page.getByRole("button", { name: "Mark available again" }).click();
+  expect(restores).toBe(0);
+  await expect(page.getByRole("dialog")).toContainText(
+    "Existing schedules stay unchanged",
+  );
+  await page
+    .getByRole("textbox", { name: "Reason for this change" })
+    .fill("Returned to service.");
+  await page.getByRole("button", { name: "Confirm availability" }).click();
+  await expect(
+    page.getByRole("button", { name: "Mark available again" }),
+  ).toHaveCount(0);
+  expect(restores).toBe(1);
+});

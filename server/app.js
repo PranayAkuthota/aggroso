@@ -339,6 +339,26 @@ export function createApp({
     }, db);
     res.json(result);
   });
+  app.post("/api/technicians/:id/restore", async (req, res) => {
+    const { reason } = reasonSchema.parse(req.body);
+    const result = await store.transaction(async (tx) => {
+      const state = await store.readState(tx);
+      const technician = state.technicians.find((t) => t.id === req.params.id);
+      if (!technician) throw fail(404, "Technician not found.");
+      if (technician.active)
+        throw fail(409, "Technician is already available.");
+      technician.active = true;
+      state.revision += 1;
+      await store.saveState(tx, state);
+      await store.audit(tx, "technician_restored", {
+        technicianId: technician.id,
+        reason,
+        revision: state.revision,
+      });
+      return { status: "available", requiresReplan: true };
+    }, db);
+    res.json(result);
+  });
   app.post("/api/requests", async (req, res) => {
     const body = requestSchema.parse(req.body);
     const result = await store.transaction(async (tx) => {

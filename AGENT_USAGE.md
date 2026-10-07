@@ -59,3 +59,7 @@ The candidate requested Gemini to avoid OpenAI API billing. Added a native HTTPS
 ## Request deletion follow-up
 
 The candidate authorized a focused request cleanup improvement. Added confirmed deletion for unstarted requests with no assignment in any schedule version, with transactional audit evidence, stale-proposal invalidation, and ID reuse prevention. PostgreSQL API tests and a browser confirmation test cover the new behavior. No production data or credentials were modified.
+
+## Technician restoration follow-up
+
+The candidate authorized restoring cancelled technicians rather than expanding roster management. Added a confirmation with a required reason and a transactional restore endpoint with an audit event and revision increment. Tests verify protected work, unchanged approved versions, stale-draft rejection, no automatic notifications, and subsequent proposal approval. Production data was not changed.

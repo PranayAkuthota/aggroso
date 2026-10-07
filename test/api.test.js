@@ -599,3 +599,56 @@ it("allows DELETE preflight from the configured frontend while rejecting other o
     .set("Access-Control-Request-Method", "DELETE");
   expect(denied.headers["access-control-allow-origin"]).toBeUndefined();
 });
+
+it("restores cancelled technicians with audit history and invalidates old drafts without changing approved work", async () => {
+  const first = await propose();
+  expect((await approve(first)).status).toBe(200);
+  await api()
+    .post("/api/requests/r1/start")
+    .send({ reason: "Service started." });
+  const before = (
+    await db.scheduleVersion.findUnique({ where: { id: first.id } })
+  ).payload;
+  expect(
+    (
+      await api()
+        .post("/api/technicians/t1/cancel")
+        .send({ reason: "Technician unavailable." })
+    ).status,
+  ).toBe(200);
+  const stale = await propose();
+  const restored = await api()
+    .post("/api/technicians/t1/restore")
+    .send({ reason: "Technician returned to service." });
+  expect(restored.status).toBe(200);
+  expect(restored.body.requiresReplan).toBe(true);
+  const state = await readState(db);
+  expect(state.technicians.find((t) => t.id === "t1").active).toBe(true);
+  expect(state.requests.find((r) => r.id === "r1").status).toBe("in_progress");
+  expect(
+    (await db.scheduleVersion.findUnique({ where: { id: first.id } })).payload,
+  ).toEqual(before);
+  expect((await approve(stale)).status).toBe(409);
+  expect(await db.notification.count()).toBe(first.changes.length);
+  expect(
+    (await db.auditEvent.findMany()).some(
+      (e) => e.payload.kind === "technician_restored",
+    ),
+  ).toBe(true);
+  const fresh = await propose();
+  expect((await approve(fresh)).status).toBe(200);
+  expect(
+    (
+      await api()
+        .post("/api/technicians/t1/restore")
+        .send({ reason: "Already restored." })
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await api()
+        .post("/api/technicians/missing/restore")
+        .send({ reason: "Restore technician." })
+    ).status,
+  ).toBe(404);
+});
