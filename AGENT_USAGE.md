@@ -51,3 +51,7 @@ Codex added the confirmed-work start transition, locked both started and complet
 The new browser test initially tried to read reasons inside a collapsed details section; the test was corrected to open it. It then exposed a missing refresh after the new Start action. Codex fixed the UI refresh and reran the browser tests. The live smoke script initially assumed an empty workspace; its action selector was updated to use the persistent Generate plan button so it can run again without clearing data. These are observed corrections, not invented rejected suggestions.
 
 Process/local environment presence checks found no OpenAI key, and the saved secure binding was unbound. No live model request was made. **OPENAI INTEGRATION CONFIGURED BUT NOT LIVE-VERIFIED**. The blueprint compliance report records reference-design differences rather than claiming exact implementation of its full architecture. No sub-agents, source commits/pushes, deployments, or publications were performed.
+
+## Gemini provider follow-up
+
+The candidate requested Gemini to avoid OpenAI API billing. Added a native HTTPS provider, strict structured output parsing, provider labels, and mocked transport tests. OpenAI and MockProvider remain selectable. No secret was added, and no production database was reset. Real Gemini connectivity requires a key configured privately on Railway and is not claimed by mocked tests.

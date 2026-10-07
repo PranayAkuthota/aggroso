@@ -8,7 +8,7 @@ The main design decision is to keep the scheduling rules independent of AI. Code
 
 - React + Vite, JavaScript, Tailwind CSS, and shadcn-style Radix/CVA Button and Dialog components.
 - Node.js + Express, Zod input validation, Prisma, and PostgreSQL.
-- OpenAI provider and a deterministic MockProvider behind the same interface.
+- OpenAI and Gemini providers and a deterministic MockProvider behind the same interface.
 - Vitest + Supertest, with integration tests against an actual, isolated PostgreSQL database.
 
 ## Local setup
@@ -68,7 +68,7 @@ The OpenAI call receives the bounded input, approved assignment baseline, and th
 flowchart LR
   UI[React dispatcher] --> API[Express / Zod]
   API --> Rules[Deterministic candidate planner]
-  Rules --> Advisor[OpenAI or MockProvider]
+  Rules --> Advisor[OpenAI, Gemini or MockProvider]
   Advisor --> Validate[Validate selected candidate]
   Validate --> Draft[Persist draft]
   Draft --> Human[Dispatcher review and approval]
@@ -127,3 +127,5 @@ See [Railway + Vercel deployment](docs/DEPLOYMENT.md), [reviewer demo](docs/DEMO
 The supplied [IMPLEMENTATION_BLUEPRINT.md](IMPLEMENTATION_BLUEPRINT.md) is retained unchanged. [Blueprint compliance](docs/BLUEPRINT_COMPLIANCE.md) maps its requirements and records implementation differences. The assessment is authoritative; the candidate’s explicit JavaScript and no-deployment instructions take precedence over TypeScript and deployment phases in that reference.
 
 Current status: **OPENAI INTEGRATION CONFIGURED BUT NOT LIVE-VERIFIED**. No secure API key is available in this workspace. MockProvider, simulated OpenAI transport, PostgreSQL workflows, and browser behavior are locally verified; no hosted deployment is claimed. See [validation evidence](docs/VALIDATION.md).
+
+Gemini is available as an alternative real advisor: configure backend-only `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL=gemini-2.5-flash`. It uses native HTTPS with a 25-second timeout, structured JSON output, and the same strict Zod response validation and deterministic candidate validation. See [deployment instructions](docs/DEPLOYMENT.md#gemini-alternative-backend-only). Free-tier quotas depend on Google account/model availability; live Gemini connectivity must be verified after secure key configuration.

@@ -51,3 +51,11 @@ This project uses one shared demonstration workspace. Before sharing, keep seed/
 ## Docker build compatibility
 
 The deployment Dockerfile uses standard `RUN npm ci && npx prisma generate` instructions, without a build-secret mount. An optional cloud-specific CA mount was removed after Railway reported Dockerfile validation failure. Railway's detailed build logs were not available in this session, so the exact validation cause and hosted retry remain unverified. TLS and Prisma checksum verification remain enabled. Environments that require an interception CA may need a separate trusted build setup; no CA, API key, proxy credential, or `.env` is copied into the deployment image.
+
+## Gemini alternative (backend only)
+
+Set Railway service variables `AI_PROVIDER=gemini`, `GEMINI_API_KEY` to your private Google AI Studio key, and `GEMINI_MODEL=gemini-2.5-flash`. Save and deploy the variable changes. Keep `DATABASE_URL`, `APP_ACCESS_TOKEN`, and the exact Vercel `FRONTEND_ORIGIN` unchanged. No database reset or reseed is needed. No Vercel key variable is needed: never put either provider key in a `VITE_*` variable.
+
+Verify `/api/health` reports `GeminiProvider`, then generate a new proposal and check Activity & logs. Health identifies the selected provider; only a successful proposal verifies a real model call. Review and approve separately. Existing approved versions retain their original provider history.
+
+Google's free tier depends on model, account, region, and current quota; no fixed request allowance is guaranteed. Select a model available to your account. Quota, network, or invalid-output failures remain visible and do not confirm assignments or silently switch providers. To use the deterministic fallback, explicitly set `AI_PROVIDER=mock` and redeploy. OpenAI remains available via `AI_PROVIDER=openai`.

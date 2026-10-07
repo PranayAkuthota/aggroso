@@ -471,3 +471,38 @@ it("does not start unstarted work assigned to a cancelled technician", async () 
     ).status,
   ).toBe(409);
 });
+
+it("Gemini proposals pass the shared validation and remain drafts until human approval", async () => {
+  const { GeminiProvider } = await import("../server/providers.js");
+  const provider = new GeminiProvider({
+    apiKey: "unit-test-placeholder",
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            finishReason: "STOP",
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    candidateId: "priority",
+                    explanation: "Prioritize urgent work.",
+                    tradeoffs: [],
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    }),
+  });
+  app = createApp({ db, provider, accessToken: null });
+  const draft = await propose();
+  expect(draft.agent.provider).toBe("gemini");
+  expect((await readState(db)).currentVersion).toBeNull();
+  expect(await db.notification.count()).toBe(0);
+  expect((await approve(draft)).status).toBe(200);
+  expect((await readState(db)).currentVersion).toBe(draft.id);
+});

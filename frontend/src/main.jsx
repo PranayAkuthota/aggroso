@@ -346,7 +346,9 @@ function App() {
               <span className="status-dot" />{" "}
               {data.provider === "MockProvider"
                 ? "Mock advisor"
-                : "OpenAI advisor"}
+                : data.provider === "GeminiProvider"
+                  ? "Gemini advisor"
+                  : "OpenAI advisor"}
             </span>
             <button
               className="refresh"
@@ -645,7 +647,9 @@ function App() {
                       <p>
                         {data.provider === "MockProvider"
                           ? "Deterministic mock · development mode"
-                          : "OpenAI · advisory mode"}
+                          : data.provider === "GeminiProvider"
+                            ? "Gemini · advisory mode"
+                            : "OpenAI · advisory mode"}
                       </p>
                     </div>
                     <span className="ai-tag">AI</span>

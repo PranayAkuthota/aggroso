@@ -46,3 +46,7 @@ Production-mode `npm start` ran on port 8001 against local PostgreSQL with a dis
 No secure OpenAI key was present in the process or local `.env`, and the saved `LLM_API_KEY` binding reported `has_saved_binding: false`. OpenAI request construction, JSON parsing, strict Zod output validation, invalid references, SDK construction, error propagation, and deterministic post-selection validation were exercised with simulated transport/providers. **OPENAI INTEGRATION CONFIGURED BUT NOT LIVE-VERIFIED**.
 
 The supplied blueprint is retained byte-for-byte. See `docs/BLUEPRINT_COMPLIANCE.md` for requirements mapping and specific reference-design deviations. No dependency, schema, Railway/Vercel configuration, or architecture replacement was needed for the gaps. Work status is stored in the existing JSON workspace, with backward-compatible normalization for older rows.
+
+## Gemini follow-up — 7 October 2026
+
+`npm test` with the isolated `dispatch_test` PostgreSQL database: **63 passed**. `npm run test:browser`: **7 passed**. `npm run build`: **passed**. Gemini transport tests cover structured requests, header-only key handling, malformed/invented output, incomplete/blocked responses, quota errors, and transport failures. The database-backed Gemini test uses a mocked HTTP response and verifies draft creation followed by mandatory approval. No production database was reset. A real Gemini request remains **not verified** until the candidate configures Railway securely and generates a proposal.
