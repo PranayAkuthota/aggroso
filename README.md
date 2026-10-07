@@ -2,6 +2,12 @@
 
 A one-day field-service dispatch workspace: propose a schedule, review exceptions, make manual changes, approve, and replan when the day changes. Built for the AGGROSO **Field Service Dispatch and Replanning Agent** assessment.
 
+## Live demo
+
+[Open the live Dispatch Desk](https://aggroso-267djte59-pranayakuthotas-projects.vercel.app/)
+
+The reviewer access token is provided privately with the submission. After signing in, click **Generate first plan** to begin the walkthrough below. The deployed advisor uses Gemini.
+
 The main design decision is to keep the scheduling rules independent of AI. Code generates three feasible candidate plans; the advisor selects one and explains the trade-offs. An explicit dispatcher approval is the only operation that confirms appointments.
 
 ## Stack
