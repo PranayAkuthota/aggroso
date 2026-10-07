@@ -48,6 +48,6 @@ Reviewers enter the access token at the app's login screen. It is held in browse
 
 This project uses one shared demonstration workspace. Before sharing, keep seed/demo data only. There is no public reset endpoint and no production customer information should be used.
 
-## Local Docker validation behind a cloud proxy
+## Docker build compatibility
 
-Normal hosting builds use `docker build -t dispatch .`. The Dockerfile accepts an optional BuildKit `build_ca` secret for environments with a trusted interception CA. Supply the environment-provided CA file through `--secret id=build_ca,src=<provided-ca-file>`, and pass Docker’s predefined proxy build arguments when needed. The mount exists only for the dependency-install step; do not copy certificates, proxy credentials, API keys, or `.env` into the image. Keep npm, TLS, and Prisma checksum verification enabled. The Codex cloud build also required a writable Docker config directory and an explicit host mapping for its supplied proxy. These machine-specific settings are not required Railway variables.
+The deployment Dockerfile uses standard `RUN npm ci && npx prisma generate` instructions, without a build-secret mount. An optional cloud-specific CA mount was removed after Railway reported Dockerfile validation failure. Railway's detailed build logs were not available in this session, so the exact validation cause and hosted retry remain unverified. TLS and Prisma checksum verification remain enabled. Environments that require an interception CA may need a separate trusted build setup; no CA, API key, proxy credential, or `.env` is copied into the deployment image.
