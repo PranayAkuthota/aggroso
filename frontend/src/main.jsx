@@ -42,6 +42,12 @@ const shortDate = (value) =>
     month: "short",
     year: "numeric",
   });
+const advisorName = (provider) => {
+  const name = String(provider || "")
+    .toLowerCase()
+    .replace(/provider$/, "");
+  return { mock: "Mock", gemini: "Gemini", openai: "OpenAI" }[name] || "AI";
+};
 const readable = (value) => value.replaceAll("_", " ");
 const requestDefaults = {
   title: "",
@@ -343,12 +349,8 @@ function App() {
           </div>
           <div className="topbar-right">
             <span className="local-badge">
-              <span className="status-dot" />{" "}
-              {data.provider === "MockProvider"
-                ? "Mock advisor"
-                : data.provider === "GeminiProvider"
-                  ? "Gemini advisor"
-                  : "OpenAI advisor"}
+              <span className="status-dot" /> {advisorName(data.provider)}{" "}
+              advisor
             </span>
             <button
               className="refresh"
@@ -645,11 +647,9 @@ function App() {
                     <div>
                       <h2>Planning advisor</h2>
                       <p>
-                        {data.provider === "MockProvider"
+                        {advisorName(data.provider) === "Mock"
                           ? "Deterministic mock · development mode"
-                          : data.provider === "GeminiProvider"
-                            ? "Gemini · advisory mode"
-                            : "OpenAI · advisory mode"}
+                          : `${advisorName(data.provider)} · advisory mode`}
                       </p>
                     </div>
                     <span className="ai-tag">AI</span>
