@@ -1,0 +1,40 @@
+{
+  "name": "dispatch-desk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --watch server/index.js",
+    "start": "node server/index.js",
+    "test": "vitest run",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "node server/seed.js",
+    "build": "prisma generate && npm --prefix frontend run build",
+    "test:unit": "vitest run test/domain.test.js test/providers.test.js",
+    "test:browser": "playwright test",
+    "format": "prettier --write server test browser-test frontend/src README.md AGENT_USAGE.md docs *.json *.js frontend/*.json frontend/*.js"
+  },
+  "dependencies": {
+    "@prisma/client": "6.7.0",
+    "cors": "2.8.5",
+    "dotenv": "16.5.0",
+    "express": "5.1.0",
+    "express-rate-limit": "7.5.0",
+    "helmet": "8.1.0",
+    "openai": "4.96.0",
+    "zod": "3.24.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.1",
+    "prettier": "3.9.9",
+    "prisma": "6.7.0",
+    "supertest": "7.3.1",
+    "vitest": "5.0.3"
+  }
+}
