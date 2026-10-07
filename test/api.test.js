@@ -574,3 +574,28 @@ it("rejects deleting started and completed requests even when no version is avai
       ).status,
     ).toBe(409);
 });
+
+it("allows DELETE preflight from the configured frontend while rejecting other origins", async () => {
+  const origin = "https://dispatch.example.com";
+  app = createApp({
+    db,
+    provider: new MockProvider(),
+    accessToken: "test-reviewer-token",
+    frontendOrigin: origin,
+  });
+  const preflight = await api()
+    .options("/api/requests/r8")
+    .set("Origin", origin)
+    .set("Access-Control-Request-Method", "DELETE")
+    .set("Access-Control-Request-Headers", "authorization,content-type");
+  expect(preflight.status).toBe(204);
+  expect(preflight.headers["access-control-allow-origin"]).toBe(origin);
+  expect(
+    preflight.headers["access-control-allow-methods"].split(","),
+  ).toContain("DELETE");
+  const denied = await api()
+    .options("/api/requests/r8")
+    .set("Origin", "https://untrusted.example.com")
+    .set("Access-Control-Request-Method", "DELETE");
+  expect(denied.headers["access-control-allow-origin"]).toBeUndefined();
+});
