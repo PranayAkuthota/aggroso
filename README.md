@@ -8,6 +8,8 @@ A one-day field-service dispatch workspace: propose a schedule, review exception
 
 The reviewer access token is provided privately with the submission. After signing in, click **Generate first plan** to begin the walkthrough below. The deployed advisor uses Gemini.
 
+Author: **Pranay Kumar Akuthota**. Commits were made through my secondary GitHub account, [`pranestaugra-ship-it`](https://github.com/pranestaugra-ship-it) (Pranay A).
+
 The main design decision is to keep the scheduling rules independent of AI. Code generates three feasible candidate plans; the advisor selects one and explains the trade-offs. An explicit dispatcher approval is the only operation that confirms appointments.
 
 ## Stack
