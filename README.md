@@ -57,7 +57,16 @@ Vite proxies `/api` to the backend on port 8000. The backend uses `PORT` when de
 
 `AI_PROVIDER=mock` runs without a paid API credential and is clearly labelled in the UI. It is a development/test advisor, not evidence of a live LLM call.
 
-For the assessed deployment use:
+The current hosted demo uses Gemini. Configure these backend variables in Railway:
+
+```dotenv
+AI_PROVIDER=gemini
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Supply `GEMINI_API_KEY` through Railway's secure server environment variables. Free-tier availability and quotas depend on the Google account and model.
+
+OpenAI support is also implemented. To select it instead:
 
 ```dotenv
 AI_PROVIDER=openai
@@ -66,7 +75,7 @@ OPENAI_MODEL=gpt-4o-mini
 
 Supply `OPENAI_API_KEY` only through Railway's secure server environment variables. `LLM_API_KEY` is an equivalent binding for cloud environments where `OPENAI_` names are reserved. Neither key is sent to the browser. Provider errors and invalid model output fail visibly with HTTP 502; the application does not silently claim MockProvider output came from OpenAI.
 
-The OpenAI call receives the bounded input, approved assignment baseline, and three validated candidates including deterministic change reasons and evidence. It returns a candidate ID, explanation, and trade-offs. The server validates that output and revalidates all selected assignments. Deterministic code, rather than the model, computes unassigned reasons, risk warnings, and clarification questions. If inputs change during an LLM call, the result is rejected and a fresh proposal is needed.
+Both real providers receive the bounded input, approved assignment baseline, and three validated candidates including deterministic change reasons and evidence. They return a candidate ID, explanation, and trade-offs. The server validates that output and revalidates all selected assignments. Deterministic code, rather than the model, computes unassigned reasons, risk warnings, and clarification questions. If inputs change during an LLM call, the result is rejected and a fresh proposal is needed.
 
 ## Architecture and persistence
 
@@ -101,10 +110,10 @@ Structured application logs contain event metadata and IDs, not credentials or f
 - Three deterministic greedy strategies: priority/deadline, workload balance, and continuity. This is not a global optimizer.
 - No real travel time, maps, GPS, payroll, route APIs, actual notifications, or technician login.
 - A dispatcher can deliberately leave work unassigned, with a logged reason. Hard constraints cannot be overridden.
-- Request editing is limited to clarification of a missing skill; technician configuration is seeded, with cancellation supported. General resource CRUD and reactivation are excluded.
+- Request editing is limited to clarification of a missing skill. Eligible requests can be deleted with confirmation and an audit record. Technician configuration is seeded, with cancellation and restoration supported; adding new technicians and general resource CRUD are excluded.
 - Reviewer-token authentication is suitable for the bounded demo. It is not a production account/role system. All token holders share the dispatcher identity; no claim of per-user attribution is made.
 - Version history is retained. Work status shown on an old version reflects current request status; assignment snapshots and audit events preserve original timing.
-- OpenAI may choose a suboptimal feasible candidate. The UI shows all unassigned work and requires a human to accept the result.
+- The advisor may choose a suboptimal feasible candidate. The UI shows all unassigned work and requires a human to accept the result.
 
 ## Tests
 
@@ -120,7 +129,9 @@ npm run test:browser
 
 Browser checks use stubbed HTTP and system Chromium when available; otherwise install Playwright Chromium with `npx playwright install chromium`. They verify interface behavior and do not replace database integration tests.
 
-Unit coverage checks hard constraints, deterministic planning, diffs with causal evidence, completed/in-progress locks, MockProvider behavior, and OpenAI response parsing using a mocked SDK transport. Database-backed API tests cover approval gating, audit/outbox atomicity, manual edit validation, stale drafts, completion/cancellation/emergency replanning, concurrent approvals, input races during AI work, provider errors, malformed input, authentication, and persistence across app instances.
+Unit coverage checks hard constraints, deterministic planning, diffs with causal evidence, completed/in-progress locks, MockProvider behavior, OpenAI response parsing using a mocked SDK transport, and Gemini behavior using mocked HTTP. Database-backed API tests cover approval gating, audit/outbox atomicity, manual edit validation, stale drafts, completion/cancellation/emergency replanning, technician restoration, request deletion, DELETE preflight CORS, concurrent approvals, input races during AI work, provider errors, malformed input, authentication, and persistence across app instances.
+
+Latest recorded local verification: **68 Vitest tests passed**, **9 Playwright browser tests passed**, and **the production build passed**. Tests use a dedicated local test database and stubbed browser HTTP, not Railway production data.
 
 See `docs/VALIDATION.md` for observed results, including what has not yet been verified. Unit tests of a mocked SDK do not verify a real OpenAI connection or hosted deployment.
 
@@ -130,9 +141,11 @@ See [Railway + Vercel deployment](docs/DEPLOYMENT.md), [reviewer demo](docs/DEMO
 
 ## Blueprint comparison and current verification
 
-The supplied [IMPLEMENTATION_BLUEPRINT.md](IMPLEMENTATION_BLUEPRINT.md) is retained unchanged. [Blueprint compliance](docs/BLUEPRINT_COMPLIANCE.md) maps its requirements and records implementation differences. The assessment is authoritative; the candidate’s explicit JavaScript and no-deployment instructions take precedence over TypeScript and deployment phases in that reference.
+The supplied [IMPLEMENTATION_BLUEPRINT.md](IMPLEMENTATION_BLUEPRINT.md) is retained unchanged. [Blueprint compliance](docs/BLUEPRINT_COMPLIANCE.md) maps its requirements and records implementation differences. The implementation uses JavaScript, and the hosted demo is deployed on Vercel with an existing Railway backend and PostgreSQL service.
 
-Current status: **OPENAI INTEGRATION CONFIGURED BUT NOT LIVE-VERIFIED**. No secure API key is available in this workspace. MockProvider, simulated OpenAI transport, PostgreSQL workflows, and browser behavior are locally verified; no hosted deployment is claimed. See [validation evidence](docs/VALIDATION.md).
+Current hosted status is user-verified: the frontend loads and connects to Railway, requests and technicians load, PostgreSQL persistence is configured, and the UI displays the Gemini advisor. The backend URL is `https://aggroso-production-3c45.up.railway.app`. The demo was restored to its original starting state for submission: 8 requests, 4 available technicians, and no generated schedule.
+
+Provider configuration and labels do not prove a successful model call. Actual live OpenAI and Gemini request success has not been independently verified in this audit. Local provider tests use simulated transports. Earlier [validation evidence](docs/VALIDATION.md) may describe verification before the hosted deployment was completed.
 
 Gemini is available as an alternative real advisor: configure backend-only `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL=gemini-2.5-flash`. It uses native HTTPS with a 25-second timeout, structured JSON output, and the same strict Zod response validation and deterministic candidate validation. See [deployment instructions](docs/DEPLOYMENT.md#gemini-alternative-backend-only). Free-tier quotas depend on Google account/model availability; live Gemini connectivity must be verified after secure key configuration.
 
