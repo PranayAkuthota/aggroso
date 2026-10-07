@@ -506,3 +506,71 @@ it("Gemini proposals pass the shared validation and remain drafts until human ap
   expect((await approve(draft)).status).toBe(200);
   expect((await readState(db)).currentVersion).toBe(draft.id);
 });
+
+it("deletes unassigned requests atomically, logs their details and never reuses IDs", async () => {
+  const added = await api().post("/api/requests").send(emergency);
+  const id = added.body.id;
+  const removed = await api()
+    .delete(`/api/requests/${id}`)
+    .send({ reason: "Created by mistake." });
+  expect(removed.status).toBe(200);
+  const state = await readState(db);
+  expect(state.requests.some((r) => r.id === id)).toBe(false);
+  const events = await db.auditEvent.findMany();
+  expect(
+    events.some(
+      (e) =>
+        e.payload.kind === "request_deleted" &&
+        e.payload.request.title === emergency.title,
+    ),
+  ).toBe(true);
+  const again = await api().post("/api/requests").send(emergency);
+  expect(again.body.id).not.toBe(id);
+  expect(
+    (
+      await api()
+        .delete(`/api/requests/${id}`)
+        .send({ reason: "Already removed." })
+    ).status,
+  ).toBe(404);
+});
+it("protects draft assignments and history and invalidates stale proposals on deletion", async () => {
+  const v = await propose();
+  const assignedId = v.assignments[0].requestId;
+  expect(
+    (
+      await api()
+        .delete(`/api/requests/${assignedId}`)
+        .send({ reason: "Delete request." })
+    ).status,
+  ).toBe(409);
+  expect(
+    (
+      await api()
+        .delete("/api/requests/r8")
+        .send({ reason: "Created by mistake." })
+    ).status,
+  ).toBe(200);
+  expect((await approve(v)).status).toBe(409);
+  expect(
+    (await db.scheduleVersion.findUnique({ where: { id: v.id } })).payload
+      .assignments,
+  ).toEqual(v.assignments);
+});
+it("rejects deleting started and completed requests even when no version is available", async () => {
+  const state = await readState(db);
+  state.requests[0].status = "in_progress";
+  state.requests[1].completed = true;
+  await db.workspace.update({
+    where: { id: "demo" },
+    data: { payload: state },
+  });
+  for (const id of ["r1", "r2"])
+    expect(
+      (
+        await api()
+          .delete(`/api/requests/${id}`)
+          .send({ reason: "Delete request." })
+      ).status,
+    ).toBe(409);
+});

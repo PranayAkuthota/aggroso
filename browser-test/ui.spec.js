@@ -246,3 +246,44 @@ test("replanning displays each change's deterministic reason", async ({
   ).toBeVisible();
   await expect(page.getByText(removed.reason, { exact: true })).toBeVisible();
 });
+
+test("deleting a request requires confirmation and removes its row", async ({
+  page,
+}) => {
+  let state = {
+    ...seedState(),
+    versions: [],
+    audit: [],
+    notifications: [],
+    provider: "MockProvider",
+  };
+  let deletions = 0;
+  await page.route("**/api/**", async (route) => {
+    if (route.request().method() === "DELETE") {
+      deletions++;
+      state.requests = state.requests.filter((r) => r.id !== "r8");
+      return route.fulfill({ json: { status: "deleted", requestId: "r8" } });
+    }
+    return route.fulfill({ json: state });
+  });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Service requests", exact: false })
+    .click();
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page
+    .getByRole("button", { name: "Delete Shop service enquiry", exact: true })
+    .click();
+  expect(deletions).toBe(0);
+  await expect(
+    page.getByText("Shop service enquiry", { exact: true }),
+  ).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page
+    .getByRole("button", { name: "Delete Shop service enquiry", exact: true })
+    .click();
+  await expect(
+    page.getByText("Shop service enquiry", { exact: true }),
+  ).toHaveCount(0);
+  expect(deletions).toBe(1);
+});

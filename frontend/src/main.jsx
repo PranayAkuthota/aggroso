@@ -23,6 +23,7 @@ import {
   SlidersHorizontal,
   MapPin,
   Pencil,
+  Trash2,
   LockKeyhole,
   Radio,
   ClipboardList,
@@ -848,6 +849,30 @@ function App() {
                       "Technician reported service completed.",
                     )
                   }
+                  canDelete={(r) =>
+                    !protectedWork(r) &&
+                    !data.versions.some((v) =>
+                      v.assignments.some((a) => a.requestId === r.id),
+                    )
+                  }
+                  onDelete={(r) => {
+                    if (
+                      window.confirm(
+                        `Delete "${r.title}"? This removes it from the service queue and records an audit entry.`,
+                      )
+                    )
+                      action(async () => {
+                        await api(
+                          `/requests/${r.id}`,
+                          {
+                            reason:
+                              "Dispatcher confirmed deletion of an unassigned request.",
+                          },
+                          "DELETE",
+                        );
+                        await refresh(null);
+                      }, "Request deleted. Generate a fresh proposal if needed.");
+                  }}
                   onClarify={(r) => {
                     setRequest({ ...r });
                     open({ type: "clarify", id: r.id });
@@ -902,6 +927,30 @@ function App() {
                     "Technician reported service completed.",
                   )
                 }
+                canDelete={(r) =>
+                  !protectedWork(r) &&
+                  !data.versions.some((v) =>
+                    v.assignments.some((a) => a.requestId === r.id),
+                  )
+                }
+                onDelete={(r) => {
+                  if (
+                    window.confirm(
+                      `Delete "${r.title}"? This removes it from the service queue and records an audit entry.`,
+                    )
+                  )
+                    action(async () => {
+                      await api(
+                        `/requests/${r.id}`,
+                        {
+                          reason:
+                            "Dispatcher confirmed deletion of an unassigned request.",
+                        },
+                        "DELETE",
+                      );
+                      await refresh(null);
+                    }, "Request deleted. Generate a fresh proposal if needed.");
+                }}
                 onClarify={(r) => {
                   setRequest({ ...r });
                   open({ type: "clarify", id: r.id });
@@ -1431,6 +1480,8 @@ function RequestTable({
   onComplete,
   onStart,
   onClarify,
+  canDelete,
+  onDelete,
 }) {
   return !requests.length ? (
     <Empty text="No requests match your search." />
@@ -1495,6 +1546,17 @@ function RequestTable({
                 </td>
                 <td>
                   <div className="flex justify-end gap-1">
+                    {canDelete(r) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={busy}
+                        aria-label={`Delete ${r.title}`}
+                        onClick={() => onDelete(r)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    )}
                     {!r.skill && (
                       <Button
                         variant="outline"

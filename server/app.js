@@ -350,12 +350,17 @@ export function createApp({
         );
       const r = {
         id:
-          "r" + (Math.max(...s.requests.map((r) => Number(r.id.slice(1)))) + 1),
+          "r" +
+          Math.max(
+            s.nextRequestNumber || 1,
+            ...s.requests.map((r) => Number(r.id.slice(1)) + 1),
+          ),
         ...body,
         completed: false,
         status: "pending",
         createdRevision: s.revision + 1,
       };
+      s.nextRequestNumber = Number(r.id.slice(1)) + 1;
       s.requests.push(r);
       s.revision += 1;
       await store.saveState(tx, s);
@@ -367,6 +372,41 @@ export function createApp({
       return r;
     }, db);
     res.status(201).json(result);
+  });
+  app.delete("/api/requests/:id", async (req, res) => {
+    const { reason } = reasonSchema.parse(req.body);
+    const result = await store.transaction(async (tx) => {
+      const state = await store.readState(tx);
+      const request = state.requests.find((r) => r.id === req.params.id);
+      if (!request) throw fail(404, "Request not found.");
+      if (isProtected(request))
+        throw fail(409, "Started and completed requests cannot be deleted.");
+      const versions = await tx.scheduleVersion.findMany();
+      if (
+        versions.some((v) =>
+          v.payload.assignments.some((a) => a.requestId === request.id),
+        )
+      )
+        throw fail(
+          409,
+          "Requests included in a draft or schedule history cannot be deleted.",
+        );
+      state.nextRequestNumber = Math.max(
+        state.nextRequestNumber || 1,
+        ...state.requests.map((r) => Number(r.id.slice(1)) + 1),
+      );
+      state.requests = state.requests.filter((r) => r.id !== request.id);
+      state.revision += 1;
+      await store.saveState(tx, state);
+      await store.audit(tx, "request_deleted", {
+        requestId: request.id,
+        request,
+        reason,
+        revision: state.revision,
+      });
+      return { status: "deleted", requestId: request.id };
+    }, db);
+    res.json(result);
   });
   app.post("/api/requests/:id/clarify", async (req, res) => {
     const body = requestSchema.parse(req.body);

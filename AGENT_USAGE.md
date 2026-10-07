@@ -55,3 +55,7 @@ Process/local environment presence checks found no OpenAI key, and the saved sec
 ## Gemini provider follow-up
 
 The candidate requested Gemini to avoid OpenAI API billing. Added a native HTTPS provider, strict structured output parsing, provider labels, and mocked transport tests. OpenAI and MockProvider remain selectable. No secret was added, and no production database was reset. Real Gemini connectivity requires a key configured privately on Railway and is not claimed by mocked tests.
+
+## Request deletion follow-up
+
+The candidate authorized a focused request cleanup improvement. Added confirmed deletion for unstarted requests with no assignment in any schedule version, with transactional audit evidence, stale-proposal invalidation, and ID reuse prevention. PostgreSQL API tests and a browser confirmation test cover the new behavior. No production data or credentials were modified.

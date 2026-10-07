@@ -50,3 +50,5 @@ The supplied blueprint is retained byte-for-byte. See `docs/BLUEPRINT_COMPLIANCE
 ## Gemini follow-up — 7 October 2026
 
 `npm test` with the isolated `dispatch_test` PostgreSQL database: **63 passed**. `npm run test:browser`: **7 passed**. `npm run build`: **passed**. Gemini transport tests cover structured requests, header-only key handling, malformed/invented output, incomplete/blocked responses, quota errors, and transport failures. The database-backed Gemini test uses a mocked HTTP response and verifies draft creation followed by mandatory approval. No production database was reset. A real Gemini request remains **not verified** until the candidate configures Railway securely and generates a proposal.
+
+Request deletion follow-up: **66 automated tests passed**, **8 browser tests passed**, and **production build passed**. New checks cover audit evidence, ID uniqueness, protected work and version references, stale proposals, and browser confirmation cancellation/acceptance. Hosted deletion remains unverified until the deployment updates.
